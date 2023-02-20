@@ -2,12 +2,18 @@
 
 Deprotocal::Deprotocal(){
     m_audioDecoder = new CCodec();
+    m_videoDecoder = new H264Decoder();
 }
 Deprotocal::~Deprotocal(){
     if (m_audioDecoder)
     {
         delete m_audioDecoder;
         m_audioDecoder = nullptr;
+    }
+    if (m_videoDecoder)
+    {
+        delete m_videoDecoder;
+        m_videoDecoder = nullptr;
     }
 }
 
@@ -18,6 +24,7 @@ Deprotocal::~Deprotocal(){
          uint8_t ret;
          //提取包头前16字节数据
          m_iHeader.DWFramHeadMark = buf->readInt32();
+         std::cout << "headMark:" << m_iHeader.DWFramHeadMark << std::endl;
          ret = buf->readInt8();
          m_iHeader.V2 = (ret >> 6) & 0x03;
          m_iHeader.P1 = (ret >> 5) & 0x01;
@@ -38,7 +45,8 @@ Deprotocal::~Deprotocal(){
          m_iHeader.DataType4 = (ret & 0xf0) >> 4;
          m_iHeader.SubpackageHandleMark4 = ret & 0x0f;
          //检查错误
-         __checkError();
+         ret=__checkError();
+         std::cout << "retValue:" << (int)ret << std::endl;
          //提取包头剩余数据
          if (m_eDataType == eVideoB || m_eDataType == eVideoI || m_eDataType == eVideoP)
          {
@@ -54,8 +62,23 @@ Deprotocal::~Deprotocal(){
          
          
          m_iHeader.WdBodyLen = buf->readInt16();//包体长度
-      
          m_iBodyLength = m_iHeader.WdBodyLen;
+         std::cout <<"bodyLength:" <<std::to_string(m_iBodyLength) << std::endl;
+
+         if (m_iBodyLength == 933)
+         {
+             static int i = 0;
+             i++;
+             std::cout <<"数据类型："<< (int)m_iHeader.DataType4<<"----"<<i << std::endl;
+             if (i == 2)
+             {
+                // buf->retrieve(933);
+            //std::cout << buf->readInt32() << std::endl;
+             }
+         
+         }
+         
+         
          //去除包体海斯头
          ret = buf->peekInt32();
          uint8_t a[4];
@@ -63,20 +86,21 @@ Deprotocal::~Deprotocal(){
          a[1] = (ret & 0xff0000) >> 16;
          a[2] = (ret & 0xff00) >> 8;
          a[3] = ret & 0xff;
-         if (a[0] == 0 && a[1] == 1 && a[2] == 0&&a[2]==(m_iBodyLength-4)/2)
+         if (a[0] == 0 && a[1] == 1 && a[3] == 0)//&&a[2]==(m_iBodyLength-4)/2
          {
              std::cout<<"去除海斯头"<<std::endl;
              buf->retrieve(4);
              m_iBodyLength -= 4;
          }
-
          //音视频解码
          switch (m_eDataType)
          {
          case DATA_TYPE::eAudio:
-             if (m_iBodyLength > buf->readableBytes())std::cout << "audio--------------------" << std::endl;
-             std::cout <<"body_length:"<< m_iBodyLength << ',' << "readablebyes:"<<buf->readableBytes() << std::endl;
-             std::cout<<m_iHeader.DWFramHeadMark << std::endl;
+             if (m_iBodyLength > buf->readableBytes()) {
+                 std::cout << "audio--------------------" << std::endl;
+                 std::cout << "body_length:" << m_iBodyLength << ',' << "readablebyes:" << buf->readableBytes() << std::endl;
+             }
+            
              m_sData = buf->retrieveAsString(m_iBodyLength);//提取音频帧数据
              //解码音频至pcms16le
              AUDIO_CODING_TYPE type;
@@ -88,6 +112,7 @@ Deprotocal::~Deprotocal(){
              case eAdpcm:type = AUDIO_CODING_TYPE::eAdpcm;break;
              default:
                  type = AUDIO_CODING_TYPE::eUnSupport;
+                 std::cout << "unsupported...\n";
              }
              std::cout<<"decode audio...\n";
              m_audioDecoder->DecodeAudio(m_sData.data(), m_sData.length(), type);
@@ -103,12 +128,17 @@ Deprotocal::~Deprotocal(){
                  if (m_iBodyLength > buf->readableBytes())std::cout <<"video1--------------------" << std::endl;
                  m_sData += buf->retrieveAsString(m_iBodyLength);
                  break;
-             case eLast:
-                 //解码视频。。。。
+             case eLast://原子包也可能为视频数据
+             case eAtomic:
+                 //解码视频。。。。 
                  std::cout << "decode video" << std::endl;
                  if (m_iBodyLength > buf->readableBytes())std::cout << "video2--------------" << std::endl;
                  m_sData += buf->retrieveAsString(m_iBodyLength);
+                 m_videoDecoder->decodeH264((uint8_t*)m_sData.data(), m_sData.length());
                  m_sData.clear();
+                 break;
+             default:
+                 std::cout << "error" << std::endl;
              }
              break;
          case DATA_TYPE::ePassthrough:

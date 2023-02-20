@@ -21,7 +21,7 @@ link_libraries("event")
 add_executable (ffmpeg "ffmpeg.cpp" "ffmpeg.h" "JT1078Header.h" "H264/h264decoder.h" "Deprotocal/Deprotocal.h" 
                          "Deprotocal/Deprotocal.cpp" "CCodec/type.h" "CCodec/CCodec.h" "CCodec/CCodec.cpp" "CCodec/codec/g726.h" "CCodec/codec/g726.cpp" 
                          "CCodec/codec/Adpcm.h" "CCodec/codec/Adpcm.cpp" "CCodec/codec/G711.h" "CCodec/codec/G711.cpp" 
-                         "Buffer/Buffer.h" "Buffer/Buffer.cpp")
+                         "Buffer/Buffer.h" "Buffer/Buffer.cpp" "H264/h264decoder.h" "H264/h264decoder.cpp" "H264/VideoScale.cpp" "H264/VideoScale.h")
 target_link_libraries(ffmpeg  "avcodec" "avformat" "avutil" "avdevice" "avfilter" "postproc" "swresample" "swscale")
 target_link_libraries(ffmpeg "mysqlcppconn8")
 target_link_libraries(ffmpeg "vlc")

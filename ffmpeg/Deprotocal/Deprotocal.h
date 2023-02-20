@@ -4,6 +4,7 @@
 #include"../CCodec/CCodec.h"
 #include"../Buffer/Buffer.h"
 #include"../CCodec/type.h"
+#include"../H264/h264decoder.h"
 class Deprotocal {
 public:
     enum CURRENT_RECEIVE_STATE
@@ -77,6 +78,7 @@ private:
     JT_1078_HEADER m_iHeader;
     std::string m_sData;
     CCodec* m_audioDecoder = nullptr;
+    H264Decoder* m_videoDecoder = nullptr;
 
 
 };

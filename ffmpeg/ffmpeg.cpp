@@ -78,13 +78,9 @@ int main(int argc, char** argv)
         {
          
             n = recv(sockfd, a, 1024, 0);
+            if (n == 0)return 0;
             buf.append(a, n);
             deprotocal.Decode(&buf);
-            
-
-            
-            
-
 
         }
     }
