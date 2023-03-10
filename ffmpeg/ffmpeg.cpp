@@ -1,35 +1,4 @@
-﻿//#include<iostream>
-//#include<string>
-//#include"Buffer/Buffer.h"
-//#include"ffmpeg.h"
-//#include"VideoScale/VideoScalter.h"
-//#include"CCodec/CCodec.h"
-//#include"util.h"
-//#include"Deprotocal/Deprotocal.h"
-//#include"CCodec/CCodec.h"
-//#include<fstream>
-//using namespace std;
-//int main()
-//{
-//	CCodec codec;
-//	ifstream fileIn("/home/xingxing/dafengchui.g726",std::ios::binary);
-//	ofstream fileOut("/home/xingxing/dafengchui.pcm",std::ios::binary);
-//	char a[320];
-//	int n;
-//	while (1)
-//	{
-//		fileIn.read(a, 160);
-//		int ret = fileIn.gcount();
-//		if (fileIn.gcount() != 160)break;
-//		codec.DecodeAudio(a, 160, AUDIO_CODING_TYPE::eG726);
-//		fileOut.write(codec.m_iResult.m_pOutBuf,codec.m_iResult.m_nOutBufLen);
-//	}
-//	fileIn.close();
-//	fileOut.close();
-//}
-
-
-#include<iostream>
+﻿#include<iostream>
 #include<string>
 #include"Buffer/Buffer.h"
 #include"ffmpeg.h"
@@ -38,25 +7,39 @@
 #include"util.h"
 #include"Deprotocal/Deprotocal.h"
 #include"CCodec/CCodec.h"
+
 //static int receiveData(int sockfd, Buffer* buf);
+//__G726不使用
 int main(int argc, char** argv)
 {
-    
+    if (argc < 2)
+    {
+        std::cout << "Usage <port>\n";
+        return 1;
+    }
     struct sockaddr_in serv_addr = { 0 };
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);//创建客户端socket
+    if (sockfd < 0) {
+        std::cout << "create socket error\n" << std::endl;
+        exit(-1);
+    }
     int ret;
 
-    // Deprotocal* deprotocal = new Deprotocal();
+
     Deprotocal deprotocal;
     Buffer buf;
     serv_addr.sin_family = AF_INET;
-    inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
-    serv_addr.sin_port = htons(8505);
+    ret=inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
+    if (ret < 0)
+    {
+        std::cout << "ip resolve error\n" << std::endl;
+        exit(-1);
+    }
+    serv_addr.sin_port = htons(atoi(argv[1]));
     if (sockfd < 0)return -1;
     ret = connect(sockfd, (struct sockaddr*)&serv_addr, (socklen_t)sizeof(serv_addr));//连接服务器
     if (ret < 0) {
         fprintf(stdout, "connect error");
-        //   delete deprotocal;
         exit(-1);
     }
     ret = send(sockfd, "Request", 5, 0);
@@ -85,39 +68,3 @@ int main(int argc, char** argv)
         }
     }
 }
-
-
-//#include<stdlib.h>
-//#include<memory.h>
-//#include<stdio.h>
-//#include<stdint.h>
-//#include<iostream>
-//#include<future>
-//#include<thread>
-//#include<fcntl.h>
-//#include<string>
-//using namespace std;
-////fifo1 fifo2
-//void print1(int fifo)
-//{
-//	char buf[1024]={0};
-//	int n=read(fifo, buf, 1024);
-//	printf("%s", buf);
-//}
-//int main()
-//{
-//	int fifo1 = open("/home/xingxing/fifo2.txt", O_WRONLY);
-//	int fifo2=open("/home/xingxing/fifo1.txt", O_RDONLY);
-//	future<void> fu1 = async(print1,fifo2);
-//	string line;
-//	while (1)
-//	{
-//		getline(std::cin, line);
-//		if (line.size() == 0)break;
-//		write(fifo1, line.data(), line.size());
-//		line.clear();
-//	}
-//	close(fifo1);
-//	close(fifo2);
-//
-//}
